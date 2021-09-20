@@ -1,12 +1,18 @@
 <?php
+
+ require "./vendor/autoload.php";
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+
 include "./cors.php";
-
-
 require './R/includes/dbcnx.php';
-require "../vendor/autoload.php";
+
+
 
 //Libreria para poder utilizar jsonwebtokens como forma de autenticacion
 // https://jwt.io/
+
 use \Firebase\JWT\JWT;
 
 
@@ -39,7 +45,7 @@ $num = $stmt->rowCount();
     // comparar la contraseña ingresada con la almacenada en la base de datos
     if(password_verify($password, $password2))
     {
-         $secret_key = "YOUR_SECRET_KEY";
+         $secret_key =  $_ENV['JWT_SECRET'];
         $issuer_claim = "THE_ISSUER"; // this can be the servername
         $audience_claim = "THE_AUDIENCE";
         $issuedat_claim = time(); // fecha de creacion del token
@@ -66,17 +72,17 @@ $num = $stmt->rowCount();
                 "jwt" => utf8ize($jwt),
                 "email" => utf8ize($email),
                 "expireAt" => utf8ize($expire_claim)
-            )); 
+            ));
     }
     else{
 
         http_response_code(401);
-        echo json_encode(array("type" => "login"));
-    } 
+        echo json_encode(array("type" => "unautorized"));
+    }
 } else {
     http_response_code(401);
-        echo json_encode(array("type" => "login"));
-}  
+        echo json_encode(array("type" => "unautorized"));
+}
 
 function utf8ize( $mixed ) {
     if (is_array($mixed)) {

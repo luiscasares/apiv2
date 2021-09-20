@@ -1,7 +1,8 @@
 <?php
 include "./cors.php";
-
-//Archivo para comprobar que el usuario esta autenticado por medio de JWT
+require "./vendor/autoload.php";
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 
 //Archivo de conexion
@@ -19,10 +20,10 @@ $queryEstados = 'SELECT * FROM estados WHERE estatus = 1 ORDER BY estado ASC';
     $stame->execute();
     $resultadosEstado=$stame->fetchAll(PDO::FETCH_ASSOC);
 
-   
+
     echo json_encode(array(
         "estados" => utf8ize($resultadosEstado)
-    )); 
+    ));
      http_response_code(200);
 
 } catch (Exception $exc) {

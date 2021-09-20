@@ -1,21 +1,15 @@
 <?php
-#ini_set(‘display_errors’, 1);
-#ini_set(‘display_startup_errors’, 1);
-error_reporting(E_ALL);
 include "./cors.php";
-//header('Content-type: application/pdf');
+require "./vendor/autoload.php";
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
- require '../vendor/phpmailer/phpmailer/src/Exception.php';
-require '../vendor/phpmailer/phpmailer/src/PHPMailer.php';
-require '../vendor/phpmailer/phpmailer/src/SMTP.php'; 
-/**
- * Script de preparación de PDF
- * Aqui se encuentran definidos el header, footer y la marca de agua
- */
-//define('FPDF_FONTPATH', dirname(__FILE__).'./fpdf182/font');
+ require './vendor/phpmailer/phpmailer/src/Exception.php';
+require './vendor/phpmailer/phpmailer/src/PHPMailer.php';
+require './vendor/phpmailer/phpmailer/src/SMTP.php';
 
 
 
@@ -26,11 +20,7 @@ require './R/includes/dbcnx.php';
  * Constante de Recaptcha
  * Variables de Formulario y sanitización
  */
-define("CLAVE_SECRETA","6LdS9L4ZAAAAAJThXKlZgmqstpIpgtOC9acEmcvi" );
 
-/* if (isset($_FILES['image']) && $_FILES['image']['size'] > 0) {
-    echo "todo bien";
-} */
 
 /**
  * Variables del formulario web para solicitar la Garantía Extendida
@@ -68,23 +58,23 @@ VALUES (?, ?);";
 try {
 $stmt = $pdocnx->prepare($queryGarantias);
 $resDb = $stmt->execute([NULL,$myJSON]);
-if ($resDb) { 
+if ($resDb) {
     http_response_code(200);
     $respuesta = array(
        'respuesta' => 'correcto',
-   ); 
+   );
 } else {
    http_response_code(400);
     $respuesta = array(
        'respuesta' =>  $stmt->errorInfo()
-   ); 
+   );
 }
- 
+
 } catch (Exception $e) {
  http_response_code(400);
  $respuesta = array(
    'error' => $e->getMessage()
-);  
+);
 }
 
 
@@ -111,16 +101,16 @@ NOTA: Al termino de la presente garantía, el cliente podrá acudir a cualquier 
 
 /**
  * Script para crear el archivo PDF
- * V1 
+ * V1
  * Autor Refill Creatvio
  * En algunas celdas o contenido se manda a llamar las variables que son capturadas desde el formulario
  * Si es necesario se debe de actualizar la libreria fpdf en el sitio web http://www.fpdf.org/
- * Versión de la librería 1.82 liberada en (07/12/2019) 
- */ 
+ * Versión de la librería 1.82 liberada en (07/12/2019)
+ */
  $titulo = utf8_decode("GARANTÍA MAKITA");
-$pdfplantilla = new PDF('P', 'mm', 'Letter'); 
+$pdfplantilla = new PDF('P', 'mm', 'Letter');
 $pdfplantilla->SetMargins(0.9,0.9,0.9);
-$pdfplantilla->AddPage(); 
+$pdfplantilla->AddPage();
 $pdfplantilla->SetFont('helvetica','B',10);
 $pdfplantilla->SetXY(10, 30);
 $pdfplantilla->SetDash(5,5);
@@ -197,8 +187,8 @@ $pdfplantilla->Write(4, $frasecondiciones);
 $pdfplantilla->AliasNbPages();
 $pdfplantilla->SetAuthor('Makita México', true);
 $pdfplantilla->SetTitle('Garantía Extendida Makita México', true);
-$pdfplantilla->SetSubject('Para uso exclusivo de clientes de Makita México', true); 
-$garantiaextendidamakita=$pdfplantilla->Output('Garantia-extendida-makita.pdf', 'S'); 
+$pdfplantilla->SetSubject('Para uso exclusivo de clientes de Makita México', true);
+$garantiaextendidamakita=$pdfplantilla->Output('Garantia-extendida-makita.pdf', 'S');
 $pdfAsBase64 = base64_encode($garantiaextendidamakita);
 //$pdfAsBase64 = 'data:application/pdf;base64,'.$pdfAsBase64;
 
@@ -207,7 +197,7 @@ $pdfAsBase64 = base64_encode($garantiaextendidamakita);
 
     /**
     * Script para crear adjuntar y enviar el correo
-    * V1 
+    * V1
     * Autor Refill Creatvio
     * En algunas celdas o contenido se manda a llamar las variables que son capturadas desde el formulario
     * Si es necesario se debe de actualizar la libreria phpmailer
@@ -218,17 +208,17 @@ $pdfAsBase64 = base64_encode($garantiaextendidamakita);
 $mail = new PHPMailer(true);
     try {
         //Configuración
-        
+
         $mail->IsSMTP();
         $mail->SMTPAuth = true;
         $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS; //'tsl';//
-        /*$mail->SMTPOptions = array(
+  /*       $mail->SMTPOptions = array(
             'ssl' => array(
             'verify_peer' => false,
             'verify_peer_name' => false,
             'allow_self_signed' => true
             )
-            );*/
+            ); */
         $mail->SetLanguage("es", "language/phpmailer.lang-es.php");
         $mail->Priority = 1;
         $mail->Port = 465;
@@ -239,15 +229,15 @@ $mail = new PHPMailer(true);
 
         $mail->Password = "R3n0mX54%";
         $mail->From = "no-reply@makita.com.mx";
-        $mail->FromName = "Makita Garantia"; 
+        $mail->FromName = "Makita Garantia";
         $mail->From = "no-replay@makita-mexico.com.mx";
         $mail->Sender = "no-replay@makita-mexico.com.mx";
 
         $mail->AddAddress($emailCliente);
-        $mail->addBCC('makitawebmaster@gmail.com');
+        //$mail->addBCC('makitawebmaster@gmail.com');
         $mail->Subject = "Makita México Garantia Extendida";
         $mail->Body = $cuerpo;
-        $mail->SMTPDebug = false;
+        $mail->SMTPDebug = true;
         $mail->CharSet = "utf-8";
         $mail->WordWrap = 50;
         $mail->AddStringAttachment($garantiaextendidamakita, 'garantia-extndida-makita.pdf', 'base64', 'application/pdf');
@@ -260,14 +250,14 @@ $mail = new PHPMailer(true);
             http_response_code(400);
         } else {
             http_response_code(200);
-        } 
-        // send the pdf as base64 
+        }
+        // send the pdf as base64
         echo json_encode($pdfAsBase64);
     } catch (Exception $e) {
         http_response_code(400);
         echo "El mensaje no se ha podido enviar. Mailer Error: {$mail->ErrorInfo}";
         error_log("Error en el archivo de generación de PDF");
-    }  
+    }
 
 
 function quitar_tildes($cadena) {

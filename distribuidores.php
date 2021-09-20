@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 include "./cors.php";
 
 //Archivo para comprobar que el usuario esta autenticado por medio de JWT
@@ -18,13 +15,21 @@ $data = json_decode(file_get_contents("php://input"));
 $accion = $data->accion;
 if ($accion === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $nombreDis = $data->nombreDis;
-    $direccionDis = $data->direccionDis;
+    $nombreDis = $data->nombreDistribuidor;
+    $direccionDis = $data->direccionDistribuidor;
     $tel1 = $data->tel1;
-    $tel2 = $data->tel2;
-    $tel3 = $data->tel3;
+
+    if(isset($data->tel2))
+      $tel2 = $data->tel2;
+
+    if(isset($data->tel3))
+      $tel3 = $data->tel3;
+
+    if(isset($data->web))
+      $web = $data->web;
+
+
     $email=$data->email;
-    $web =$data->web;
     $activo= $data->activo;
     $idEstado= $data->idEstado;
 
@@ -33,7 +38,7 @@ if ($accion === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $stmt = $pdocnx->prepare($queryDistribuidor);
         $resDb = $stmt->execute([NULL,$nombreDis, $direccionDis, $tel1, $tel2, $tel3, $email, $web, $activo, $idEstado]);
-        if ($resDb) { 
+        if ($resDb) {
              http_response_code(200);
             $respuesta = array(
                 'respuesta' => 'correcto',
@@ -44,21 +49,20 @@ if ($accion === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 'respuesta' =>  $stmt->errorInfo()
             );
          }
-        
+
     } catch (Exception $e) {
         http_response_code(400);
         $respuesta = array(
             'error' => $e->getMessage()
         );
     }
-    echo json_encode( $respuesta); 
+    echo json_encode( $respuesta);
 }
-
 
 if ($accion === 'update' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
   $idDistribuidor = $data->idDistribuidor;
-  $nombreDis = $data->nombreDis;
-  $direccionDis = $data->direccionDis;
+  $nombreDis = $data->nombreDistribuidor;
+  $direccionDis = $data->direccionDistribuidor;
   $tel1 = $data->tel1;
   $tel2 = $data->tel2;
   $tel3 = $data->tel3;
@@ -67,12 +71,11 @@ if ($accion === 'update' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
   $activo= $data->activo;
   $idEstado= $data->idEstado;
 
-  echo $activo;
   if (empty($idDistribuidor)) {
     http_response_code(400);
     echo json_encode( array(
         'error' => "idDistribuidor es obligatorio"
-    )); 
+    ));
     return;
   }
 
@@ -99,7 +102,7 @@ if ($accion === 'update' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
   if (!empty($email)) {
     $sql .=  ",email= :email";
     $params[':email'] = $email;
-  } 
+  }
  if ($activo == 1 || $activo == 0) {
     $sql .=  ",activo= :activo";
     $params[':activo'] = $activo;
@@ -107,14 +110,14 @@ if ($accion === 'update' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
   if (is_numeric($idEstado)) {
     $sql .=  ",idEstado= :idEstado";
     $params[':idEstado'] = $idEstado;
-  } 
+  }
 
   $sql .=  " WHERE idDistribuidor = :idDistribuidor";
   $params[':idDistribuidor'] = $idDistribuidor;
   try {
       $stmt = $pdocnx->prepare($sql);
       $resDb = $stmt->execute($params);
-      if ($resDb) { 
+      if ($resDb) {
            http_response_code(200);
           $respuesta = array(
               'respuesta' => 'correcto',
@@ -126,14 +129,14 @@ if ($accion === 'update' && $_SERVER['REQUEST_METHOD'] === 'PUT') {
               'error' =>  "2"
           );
        }
-      
+
   } catch (Exception $e) {
       http_response_code(400);
       $respuesta = array(
           'error' => $e->getMessage()
       );
   }
-  echo json_encode( $respuesta); 
+  echo json_encode( $respuesta);
 }
 
 /**
@@ -148,7 +151,7 @@ if ($accion === 'getAll' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /*     SELECT * FROM customers
 WHERE 'Robert Bob Smith III, PhD.' LIKE CONCAT('%',name,'%') */
-    
+
     if (empty($pageSize) || $pageSize <= 0) $pageSize = 10;
     if (empty($pageNum) || $pageNum <= 0) $pageNum = 1;
 
@@ -156,7 +159,7 @@ WHERE 'Robert Bob Smith III, PhD.' LIKE CONCAT('%',name,'%') */
 
     $queryDistribuidor = "SELECT  * FROM distribuidores ";
     $queryCountDistribuidor = "SELECT   COUNT(*) FROM distribuidores";
-    
+
   $params = array();
   if (!empty($search)) {
     $queryDistribuidor .=  " WHERE nombreDistribuidor LIKE CONCAT('%',:nombreDistribuidor,'%') ORDER BY nombreDistribuidor ASC";
@@ -164,7 +167,7 @@ WHERE 'Robert Bob Smith III, PhD.' LIKE CONCAT('%',name,'%') */
   } else {
     $queryDistribuidor .= " ORDER BY nombreDistribuidor ASC LIMIT $pageSize OFFSET $offset";
   }
-  
+
     try {
       $stDistri = $pdocnx->prepare($queryDistribuidor);
       $stDistri->execute($params);
@@ -174,22 +177,22 @@ WHERE 'Robert Bob Smith III, PhD.' LIKE CONCAT('%',name,'%') */
       if ($pageNum === 1) {
         $stCountDistri = $pdocnx->prepare($queryCountDistribuidor);
         $stCountDistri->execute();
-        $totalDistribuidores=$stCountDistri->fetchColumn(); 
+        $totalDistribuidores=$stCountDistri->fetchColumn();
       }
-     
+
       http_response_code(200);
       $respuesta = array(
           "distribuidores" => $resultadosDistribuidores,
           "total" => $totalDistribuidores
-      ); 
+      );
     } catch (Exception $exc) {
       http_response_code(500);
       $respuesta = array(
         'error' => $exc->getMessage()
     );
     }
-      
-    echo json_encode( utf8ize($respuesta)); 
+
+    echo json_encode( utf8ize($respuesta));
 }
 
 
@@ -204,7 +207,7 @@ if ($accion === 'delete' && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
         $stmt = $pdocnx->prepare($queryDeleteDist);
         $resDb = $stmt->execute([$idDistribuidor]);
         $resDb = $stmt->rowCount();
-        if ($resDb !== 0) { 
+        if ($resDb !== 0) {
             http_response_code(200);
             $respuesta = array(
                 'respuesta' => 'correcto',
@@ -215,7 +218,7 @@ if ($accion === 'delete' && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
                 'respuesta' =>  'No se encontro ningun distribuidor con este id'
             );
          }
-        
+
     } catch (Exception $e) {
         http_response_code(500);
         $respuesta = array(
@@ -227,7 +230,7 @@ if ($accion === 'delete' && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
         'respuesta' => "El idDistribuidor debe ser enviado"
     );
    }
-    echo json_encode( $respuesta); 
+    echo json_encode( $respuesta);
 }
 
 
@@ -237,7 +240,7 @@ if (empty($accion) || ($accion !== 'delete' && $accion !== 'create'&& $accion !=
     $respuesta = array(
       'respuesta' => "Accion invalida"
   );
-  echo json_encode( $respuesta); 
+  echo json_encode( $respuesta);
 }
 
 

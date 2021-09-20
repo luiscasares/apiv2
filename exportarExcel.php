@@ -1,17 +1,15 @@
 <?php
-ini_set(‘display_errors’, 1);
-ini_set(‘display_startup_errors’, 1);
-error_reporting(E_ALL);
+
 include "./cors.php";
 require "./funciones/authcheker.php";
 
-require '../vendor/autoload.php';
 require './R/includes/dbcnx.php';
 
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 header('Content-Type: application/json');
 
 $queryGarantias = 'SELECT * FROM garantias ORDER BY `fecha` DESC';
@@ -21,7 +19,7 @@ try {
     if ($resDb) {
       $documento = new Spreadsheet();
       $nombreDelDocumento = "Garantias.xlsx";
-      
+
       $hoja = $documento->getActiveSheet();
       $hoja->setTitle("Garantias");
       //$hoja->setCellValueByColumnAndRow(1, 1, "Un valor en 1, 1");
@@ -33,9 +31,9 @@ try {
       $hoja->setCellValue("F1", "Fecha");
       $hoja->setCellValue("G1", "Nombre del distribuidor");
       $hoja->setCellValue("H1", "Direccion del distribuidor");
-      
+
       $hoja->setCellValue("I1", "Numero de factura");
-      
+
       $hoja->getColumnDimension('A')->setWidth(15);
       $hoja->getColumnDimension('B')->setWidth(15);
       $hoja->getColumnDimension('C')->setWidth(15);
@@ -45,16 +43,18 @@ try {
       $hoja->getColumnDimension('G')->setWidth(15);
       $hoja->getColumnDimension('H')->setWidth(25);
       $hoja->getColumnDimension('I')->setWidth(15);
-      
-      
-      
+
+
+
       $hoja->getStyle('A1:I1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('1579f6');
-      
-          $i = 2;
-          while ($row = $stame->fetch()) {
+
+      $i = 2;
+
+          while ($row = $stame->fetch(PDO::FETCH_ASSOC)) {
               $obj = json_decode($row['valores']);
-      
-              $hoja->setCellValue('A'.$i , $obj->{'nombre'});
+              //echo $obj->{'nombre'};
+
+               $hoja->setCellValue('A'.$i ,$obj->{'nombre'});
               $hoja->setCellValue('B'.$i , $obj->{'email'});
               $hoja->setCellValue('C'.$i , $obj->{'modelo'});
               $hoja->setCellValue('D'.$i , $obj->{'nombreHerr'});
@@ -65,17 +65,17 @@ try {
               $hoja->setCellValue('I'.$i , $obj->{'numFactura'});
               $i++;
           }
-      
+
       header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
       header('Cache-Control: max-age=0');
-        
+
       $writer = IOFactory::createWriter($documento, 'Xlsx');
       ob_start();
       $writer->save('php://output');
       $xlsData = ob_get_contents();
       ob_end_clean();
-      
+
       $response =  array(
           'file' => "data:application/vnd.ms-excel;base64,".base64_encode($xlsData)
       );
@@ -86,7 +86,7 @@ try {
       $respuesta = array(
           'respuesta' =>  $stmt->errorInfo()
       );
-      echo json_encode( $respuesta); 
+      echo json_encode( $respuesta);
     }
 
 
