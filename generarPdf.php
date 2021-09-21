@@ -227,17 +227,17 @@ $mail = new PHPMailer(true);
 
         $mail->Username = "no-replay@makita-mexico.com.mx";
 
-        $mail->Password = "R3n0mX54%";
+        $mail->Password = $_ENV['EMAIL_PASSWORD'];
         $mail->From = "no-reply@makita.com.mx";
         $mail->FromName = "Makita Garantia";
         $mail->From = "no-replay@makita-mexico.com.mx";
         $mail->Sender = "no-replay@makita-mexico.com.mx";
 
         $mail->AddAddress($emailCliente);
-        //$mail->addBCC('makitawebmaster@gmail.com');
+        $mail->addBCC('makitawebmaster@gmail.com');
         $mail->Subject = "Makita México Garantia Extendida";
         $mail->Body = $cuerpo;
-        $mail->SMTPDebug = true;
+        $mail->SMTPDebug = false;
         $mail->CharSet = "utf-8";
         $mail->WordWrap = 50;
         $mail->AddStringAttachment($garantiaextendidamakita, 'garantia-extndida-makita.pdf', 'base64', 'application/pdf');
